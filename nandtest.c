@@ -24,7 +24,9 @@ void usage(void)
 		"  -p, --passes		Number of passes\n"
 		"  -o, --offset		Start offset on flash\n"
 		"  -l, --length		Length of flash to test\n"
-		"  -k, --keep		Restore existing contents after test\n");
+		"  -k, --keep		Restore existing contents after test\n"
+		"Warning: it is just used for SLC NAND!\n");
+
 	exit(1);
 }
 
@@ -34,13 +36,13 @@ int fd;
 int markbad=0;
 int seed;
 
-int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf)
+int erase_and_write(loff_mtd_t ofs, unsigned char *data, unsigned char *rbuf)
 {
 	struct erase_info_user er;
 	ssize_t len;
 	int i;
 
-	printf("\r%08x: erasing... ", (unsigned)ofs);
+	printf("\r%09llx: erasing... ", (loff_mtd_t)ofs);
 	fflush(stdout);
 
 	er.start = ofs;
@@ -49,13 +51,13 @@ int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf)
 	if (ioctl(fd, MEMERASE, &er)) {
 		perror("MEMERASE");
 		if (markbad) {
-			printf("Mark block bad at %08lx\n", (long)ofs);
+			printf("Mark block bad at %09llx\n", (loff_mtd_t)ofs);
 			ioctl(fd, MEMSETBADBLOCK, &ofs);
 		}
 		return 1;
 	}
 
-	printf("\r%08x: writing...", (unsigned)ofs);
+	printf("\r%09llx: writing...", (loff_mtd_t)ofs);
 	fflush(stdout);
 
 	len = pwrite(fd, data, meminfo.erasesize, ofs);
@@ -63,7 +65,7 @@ int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf)
 		printf("\n");
 		perror("write");
 		if (markbad) {
-			printf("Mark block bad at %08lx\n", (long)ofs);
+			printf("Mark block bad at %09llx\n", (loff_mtd_t)ofs);
 			ioctl(fd, MEMSETBADBLOCK, &ofs);
 		}
 		return 1;
@@ -74,7 +76,7 @@ int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf)
 		exit(1);
 	}
 
-	printf("\r%08x: reading...", (unsigned)ofs);
+	printf("\r%09llx: reading...", (loff_mtd_t)ofs);
 	fflush(stdout);
 	
 	len = pread(fd, rbuf, meminfo.erasesize, ofs);
@@ -95,17 +97,17 @@ int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf)
 	}
 
 	if (newstats.corrected > oldstats.corrected) {
-		printf("\nECC corrected at %08x\n", (unsigned) ofs);
+		printf("\nECC corrected at %09llx\n", (loff_mtd_t) ofs);
 		oldstats.corrected = newstats.corrected;
 	}
 	if (newstats.failed > oldstats.failed) {
-		printf("\nECC failed at %08x\n", (unsigned) ofs);
+		printf("\nECC failed at %09llx\n", (loff_mtd_t) ofs);
 		oldstats.corrected = newstats.corrected;
 	}
 	if (len < meminfo.erasesize)
 		exit(1);
 
-	printf("\r%08x: checking...", (unsigned)ofs);
+	printf("\r%09llx: checking...", (loff_mtd_t)ofs);
 	fflush(stdout);
 
 	if (memcmp(data, rbuf, meminfo.erasesize)) {
@@ -132,8 +134,8 @@ int main(int argc, char **argv)
 	int pass;
 	int nr_passes = 1;
 	int keep_contents = 0;
-	uint32_t offset = 0;
-	uint32_t length = -1;
+	uint64_t offset = 0;
+	uint64_t length = -1;
 
 	for (;;) {
 		static const char *short_options="hkl:mo:p:s:";
@@ -203,17 +205,18 @@ int main(int argc, char **argv)
 		length = meminfo.size;
 
 	if (offset % meminfo.erasesize) {
-		fprintf(stderr, "Offset %x not multiple of erase size %x\n", 
+		fprintf(stderr, "Offset %09llx not multiple of erase size %x\n", 
 			offset, meminfo.erasesize);
 		exit(1);
 	}
 	if (length % meminfo.erasesize) {
-		fprintf(stderr, "Length %x not multiple of erase size %x\n", 
+		fprintf(stderr, "Length %09llx not multiple of erase size %x\n", 
 			length, meminfo.erasesize);
 		exit(1);
 	}
+
 	if (length + offset > meminfo.size) {
-		fprintf(stderr, "Length %x + offset %x exceeds device size %x\n", 
+		fprintf(stderr, "Length %09llx + offset %09llx exceeds device size %09llx\n", 
 			length, offset, meminfo.size);
 		exit(1);
 	}		
@@ -239,7 +242,7 @@ int main(int argc, char **argv)
 	printf("BBT blocks     : %d\n", oldstats.bbtblocks);
 
 	for (pass = 0; pass < nr_passes; pass++) {
-		loff_t test_ofs;
+		loff_mtd_t test_ofs;
 
 		for (test_ofs = offset; test_ofs < offset+length; test_ofs += meminfo.erasesize) {
 			ssize_t len;
@@ -248,7 +251,7 @@ int main(int argc, char **argv)
 			srand(seed);
 
 			if (ioctl(fd, MEMGETBADBLOCK, &test_ofs)) {
-				printf("\rBad block at 0x%08x\n", (unsigned)test_ofs);
+				printf("\rBad block at 0x%09llx\n", test_ofs);
 				continue;
 			}
 
@@ -256,7 +259,7 @@ int main(int argc, char **argv)
 				wbuf[i] = rand();
 
 			if (keep_contents) {
-				printf("\r%08x: reading... ", (unsigned)test_ofs);
+				printf("\r%09llx: reading... ", test_ofs);
 				fflush(stdout);
 
 				len = pread(fd, rbuf, meminfo.erasesize, test_ofs);

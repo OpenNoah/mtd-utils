@@ -35,7 +35,7 @@
 #include "summary.h"
 
 #define PROGRAM "jffs2dump"
-#define VERSION "$Revision: 1.10 $"
+#define VERSION "$Revision: 1.1.1.1 $"
 
 #define PAD(x) (((x)+3)&~3)
 

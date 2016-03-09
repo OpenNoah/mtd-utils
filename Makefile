@@ -5,7 +5,7 @@ OPTFLAGS := -O2 -Wall
 SBINDIR=/usr/sbin
 MANDIR=/usr/share/man
 INCLUDEDIR=/usr/include
-#CROSS=arm-linux-
+CROSS=mipsel-linux-
 CC := $(CROSS)gcc
 CFLAGS := -I./include $(OPTFLAGS)
 
@@ -13,20 +13,26 @@ ifeq ($(origin CROSS),undefined)
   BUILDDIR := .
 else
 # Remove the trailing slash to make the directory name
-  BUILDDIR := $(CROSS:-=)
+  BUILDDIR := .#$(CROSS:-=)
 endif
 
 ifeq ($(WITHOUT_XATTR), 1)
   CFLAGS += -DWITHOUT_XATTR
 endif
 
-RAWTARGETS = ftl_format flash_erase flash_eraseall nanddump doc_loadbios \
-	ftl_check mkfs.jffs2 flash_lock flash_unlock flash_info \
-	flash_otp_info flash_otp_dump mtd_debug flashcp nandwrite nandtest \
-	jffs2dump \
-	nftldump nftl_format docfdisk \
-	rfddump rfdformat \
-	serve_image recv_image \
+#RAWTARGETS = ftl_format flash_erase flash_eraseall nanddump doc_loadbios \
+#	ftl_check mkfs.jffs2 flash_lock flash_unlock flash_info \
+#	flash_otp_info flash_otp_dump mtd_debug flashcp nandwrite nandtest \
+#	jffs2dump \
+#	nftldump nftl_format docfdisk \
+#	rfddump rfdformat \
+#	serve_image recv_image \
+#	sumtool #jffs2reader
+
+RAWTARGETS = flash_erase flash_eraseall nanddump nanddump_vfat \
+	flash_info \
+	flash_otp_info flash_otp_dump nandwrite nandwrite_mlc \
+        nandtest \
 	sumtool #jffs2reader
 
 TARGETS = $(foreach target,$(RAWTARGETS),$(BUILDDIR)/$(target))
@@ -43,6 +49,8 @@ $(BUILDDIR)/%.o: %.c
 .SUFFIXES:
 
 all: $(TARGETS)
+	mkdir -p $(BUILDDIR)/mtd-utils-dir
+	cp $(TARGETS) $(BUILDDIR)/mtd-utils-dir
 	make -C $(BUILDDIR)/ubi-utils
 
 IGNORE=${wildcard $(BUILDDIR)/.*.c.dep}
@@ -50,6 +58,7 @@ IGNORE=${wildcard $(BUILDDIR)/.*.c.dep}
 
 clean:
 	rm -f $(BUILDDIR)/*.o $(TARGETS) $(BUILDDIR)/.*.c.dep $(SYMLINKS)
+	rm -fr $(BUILDDIR)/target-bins-dir
 	if [ "$(BUILDDIR)x" != ".x" ]; then rm -rf $(BUILDDIR); fi
 	make -C $(BUILDDIR)/ubi-utils clean
 

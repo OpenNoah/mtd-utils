@@ -28,8 +28,8 @@
   It is suitable for plotting, as the data is written as
   COL1=UsedSpace COL2=Jitter
 
-  $Id: plotJittervsFill.c,v 1.6 2005/11/07 11:15:21 gleixner Exp $
-  $Log: plotJittervsFill.c,v $
+  $Id: plotJittervsFill.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $
+  $Log: not supported by cvs2svn $
   Revision 1.6  2005/11/07 11:15:21  gleixner
   [MTD / JFFS2] Clean up trailing white spaces
 
@@ -62,7 +62,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static char Version_string[] = "$Id: plotJittervsFill.c,v 1.6 2005/11/07 11:15:21 gleixner Exp $";
+static char Version_string[] = "$Id: plotJittervsFill.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $";
 static char LogFile[250] = "InputLogFile.log";
 
 static int JitterThreshold_ms = 1000;

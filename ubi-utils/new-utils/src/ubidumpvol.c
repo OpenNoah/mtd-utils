@@ -22,6 +22,7 @@
  * Authors: Frank Haverkamp
  *          Joshua W. Boyer
  *          Artem Bityutskiy
+ *          Yurong Tan (Nancy)
  */
 
 #include <fcntl.h>
@@ -38,7 +39,7 @@
 #include "common.h"
 
 #define PROGRAM_VERSION "1.1"
-#define PROGRAM_NAME    "ubiupdatevol"
+#define PROGRAM_NAME    "ubidumpvol"
 
 struct args {
 	int truncate;
@@ -71,8 +72,7 @@ static const char *optionsstr =
 static const char *usage =
 "Usage: " PROGRAM_NAME " <UBI volume node file name> [-t] [-h] [-V] [--truncate] [--help]\n"
 "\t\t\t[--version] <image file>\n\n"
-"Example 1: " PROGRAM_NAME " /dev/ubi0_1 fs.img - write file \"fs.img\" to UBI volume /dev/ubi0_1\n"
-"Example 2: " PROGRAM_NAME " /dev/ubi0_1 -t - wipe out UBI volume /dev/ubi0_1";
+	"Example 1: " PROGRAM_NAME " /dev/ubi0_1 fs.img - dump UBI volume /dev/ubi0_1 to file \"fs.img\" \n";
 
 struct option long_options[] = {
 	{ .name = "truncate", .has_arg = 0, .flag = NULL, .val = 't' },
@@ -143,7 +143,7 @@ static int parse_opt(int argc, char * const argv[])
 	} else {
 		if (optind == argc)
 			return errmsg("UBI device name was not specified (use -h for help)");
-		else if (optind != argc - 2 && !args.truncate)
+		else if (optind != argc - 2)
 			return errmsg("specify UBI device name and image file name as first 2 "
 				      "parameters (use -h for help)");
 	}
@@ -154,135 +154,64 @@ static int parse_opt(int argc, char * const argv[])
 	return 0;
 }
 
-static int truncate_volume(libubi_t libubi)
-{
-	int err, fd;
-
-	fd = open(args.node, O_RDWR);
-	if (fd == -1)
-		return sys_errmsg("cannot open \"%s\"", args.node);
-
-	err = ubi_update_start(libubi, fd, 0);
-	if (err) {
-		sys_errmsg("cannot truncate volume \"%s\"", args.node);
-		close(fd);
-		return -1;
-	}
-
-	close(fd);
-	return 0;
-}
-
-static int ubi_write(int fd, const void *buf, int len)
-{
-	int ret;
-
-	while (len) {
-		ret = write(fd, buf, len);
-		if (ret < 0) {
-			if (errno == EINTR) {
-				warnmsg("do not interrupt me!");
-				continue;
-			}
-			return sys_errmsg("cannot write %d bytes to volume \"%s\"",
-					  len, args.node);
-		}
-
-		if (ret == 0)
-			return errmsg("cannot write %d bytes to volume \"%s\"", len, args.node);
-		
-		len -= ret;
-		buf += ret;
-	}
-
-	return 0;
-}
- 
-static int update_volume(libubi_t libubi, struct ubi_vol_info *vol_info)
+static int dump_volume(libubi_t libubi, struct ubi_vol_info *vol_info)
 {
 	int err, fd, ifd;
-	long long bytes, tmp;
-	struct stat st;
-	char *buf;
-	
-	buf = malloc(vol_info->leb_size+sizeof(unsigned int));
-	if (!buf)
+	struct ubi_leb leb;
+	int i, tmp;
+
+	leb.buf = malloc(vol_info->leb_size);
+	if (!leb.buf)
 		return errmsg("cannot allocate %d bytes of memory", vol_info->leb_size);
 
-	err = stat(args.img, &st);
-	if (err < 0) {
-		errmsg("stat failed on \"%s\"", args.img);
-		goto out_free;
-	}
-
-	bytes = st.st_size;
-	tmp = bytes / (vol_info->leb_size + sizeof(unsigned int)) * sizeof(unsigned int); 
-	bytes -= tmp;
-	if (bytes > vol_info->rsvd_bytes ) {
-		errmsg("\"%s\" (size %lld) will not fit volume \"%s\" (size %lld)",
-		       args.img, bytes, args.node, vol_info->rsvd_bytes);
-		goto out_free;
-	}
-
-	/* A hack to handle deprecated -B option */
-	if (args.broken_update)
-		bytes = 1;
-
-	fd = open(args.node, O_RDWR);
+	fd = open(args.node, O_RDONLY);
 	if (fd == -1) {
 		sys_errmsg("cannot open UBI volume \"%s\"", args.node);
 		goto out_free;
 	}
 
-	ifd = open(args.img, O_RDONLY);
+	ifd = open(args.img, O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	if (ifd == -1) {
 		sys_errmsg("cannot open \"%s\"", args.img);
 		goto out_close1;
 	}
-
-	err = ubi_update_start(libubi, fd, bytes);
-	if (err) {
-		sys_errmsg("cannot start volume \"%s\" update", args.node);
-		goto out_close;
-	}
-
-	bytes += tmp;
-	while (bytes) {
-		int tocopy = vol_info->leb_size + sizeof(unsigned int) ;
-
-		if (tocopy > bytes)
-			tocopy = bytes;
-
-		err = read(ifd, buf, tocopy);
-		if (err != tocopy) {
-			if (errno == EINTR) {
-				warnmsg("do not interrupt me!");
-				continue;
-			} else {
-				sys_errmsg("cannot read %d bytes from \"%s\"",
-					   tocopy, args.img);
-				goto out_close;
+	
+	for(i=0; i < vol_info->rsvd_lebs; i++){
+		leb.lnum = i;
+		tmp = ubi_leb_read_start(fd, &leb);
+		if(tmp == 1)
+			continue;
+		else if(tmp == 0){
+			// write lnum
+			err = write(ifd, (char *)&leb.lnum, sizeof(leb.lnum));
+			if (err != sizeof(leb.lnum)){
+				perror("Image file write error\n");
+				goto out_close;	
 			}
-		}
-
-		err = ubi_write(fd, buf, tocopy-sizeof(unsigned int));
-		if (err)
+			// write LEB data
+			err = write(ifd, leb.buf, vol_info->leb_size);
+			if (err != vol_info->leb_size){
+				perror("Image file write error\n");
+				goto out_close;	
+			}
+		}else{
+			printf("LEB %d read error\n", i);
 			goto out_close;
-
-		bytes -= tocopy;
+		}
 	}
 
 	close(ifd);
 	close(fd);
-	free(buf);
+	free(leb.buf);
+	printf("Dump Volume succeed\n");
 	return 0;
-
+	goto out_close;
 out_close:
 	close(ifd);
 out_close1:
 	close(fd);
 out_free:
-	free(buf);
+	free(leb.buf);
 	return -1;
 }
 
@@ -295,6 +224,9 @@ int main(int argc, char * const argv[])
 	err = parse_opt(argc, argv);
 	if (err)
 		return -1;
+
+	if (!args.img && !args.truncate)
+		return errmsg("incorrect arguments, use -h for help");
 
 	libubi = libubi_open(1);
 	if (libubi == NULL) {
@@ -319,13 +251,10 @@ int main(int argc, char * const argv[])
 		goto out_libubi;
 	}
 
-	if (args.truncate)
-		err = truncate_volume(libubi);
-	else
-		err = update_volume(libubi, &vol_info);
+	err = dump_volume(libubi, &vol_info);
 	if (err)
 		goto out_libubi;
-
+	
 	libubi_close(libubi);
 	return 0;
 

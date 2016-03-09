@@ -67,7 +67,7 @@ int region_erase(int Fd, int start, int count, int unlock, int regcount)
 				return 8;
 			}
 		}
-		printf("\rPerforming Flash Erase of length %u at offset 0x%x",
+		printf("\rPerforming Flash Erase of length 0x%llx at offset 0x%llx",
 				erase.length, erase.start);
 		fflush(stdout);
 		if(ioctl(Fd, MEMERASE, &erase) != 0)
@@ -104,14 +104,14 @@ int non_region_erase(int Fd, int start, int count, int unlock)
 		erase.length = meminfo.erasesize;
 
 		for (; count > 0; count--) {
-			printf("\rPerforming Flash Erase of length %u at offset 0x%x",
+			printf("\rPerforming Flash Erase of length 0x%llx at offset 0x%llx",
 					erase.length, erase.start);
 			fflush(stdout);
 
 			if(unlock != 0)
 			{
 				//Unlock the sector first.
-				printf("\rPerforming Flash unlock at offset 0x%x",erase.start);
+				printf("\rPerforming Flash unlock at offset 0x%llx",erase.start);
 				if(ioctl(Fd, MEMUNLOCK, &erase) != 0)
 				{
 					perror("\nMTD Unlock failure");

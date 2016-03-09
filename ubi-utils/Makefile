@@ -9,6 +9,7 @@ SBINDIR=/usr/sbin
 MANDIR=/usr/share/man
 INCLUDEDIR=/usr/include
 
+CROSS=mipsel-linux-
 CC := $(CROSS)gcc
 CFLAGS := -I./inc -I./src -I$(KERNELHDR) $(OPTFLAGS) -Werror \
 	-Wwrite-strings -W -std=gnu99 -DPACKAGE_VERSION=\"1.0\"
@@ -29,6 +30,8 @@ vpath   %.c ./src
 	$(CC) $(CFLAGS) -g -c -o $@ $< -g -Wp,-MD,.$(shell basename $<).dep
 
 all: $(TARGETS)
+	mkdir -p ubi-utils-dir
+	cp $(TARGETS) ubi-utils-dir
 	make -C new-utils
 
 IGNORE=${wildcard .*.c.dep}
@@ -40,6 +43,7 @@ $(NTARGETS):
 
 clean:
 	rm -rf *.o $(TARGETS) .*.c.dep
+	rm -fr ubi-utils-dir	
 	make -C new-utils clean
 
 pddcustomize: pddcustomize.o error.o libubimirror.o bootenv.o hashmap.o \

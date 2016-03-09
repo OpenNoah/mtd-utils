@@ -222,7 +222,7 @@ int ubigen_write_volume(const struct ubigen_info *ui,
 			long long bytes, int in, int out)
 {
 	int len = vi->usable_leb_size, rd, lnum = 0;
-	char inbuf[ui->leb_size], outbuf[ui->peb_size];
+	char inbuf[ui->leb_size+sizeof(unsigned int)], outbuf[ui->peb_size];
 
 	if (vi->id >= ui->max_volumes)
 		return errmsg("too high volume id %d, max. volumes is %d",
@@ -245,7 +245,11 @@ int ubigen_write_volume(const struct ubigen_info *ui,
 
 		l = len;
 		do {
-			rd = read(in, inbuf + len - l, l);
+			rd = read(in, inbuf + len - l, sizeof(unsigned int));
+			if (rd != sizeof(unsigned int))
+				return sys_errmsg("cannot read leb lnum from the input file");
+
+			rd = read(in, inbuf + len - l + sizeof(unsigned int), l);
 			if (rd != l)
 				return sys_errmsg("cannot read %d bytes from the input file", l);
 
@@ -253,16 +257,17 @@ int ubigen_write_volume(const struct ubigen_info *ui,
 		} while (l);
 
 		vid_hdr = (struct ubi_vid_hdr *)(&outbuf[ui->vid_hdr_offs]);
-		init_vid_hdr(ui, vi, vid_hdr, lnum, inbuf, len);
+		lnum = ((unsigned int *)inbuf)[0];
+		init_vid_hdr(ui, vi, vid_hdr, lnum, inbuf+sizeof(unsigned int), len);
 
-		memcpy(outbuf + ui->data_offs, inbuf, len);
+		memcpy(outbuf + ui->data_offs, inbuf+sizeof(unsigned int), len);
 		memset(outbuf + ui->data_offs + len, 0xFF,
 		       ui->peb_size - ui->data_offs - len);
 
 		if (write(out, outbuf, ui->peb_size) != ui->peb_size)
 			return sys_errmsg("cannot write %d bytes to the output file", ui->peb_size);
 
-		lnum += 1;
+//		lnum += 1;
 	}
 
 	return 0;

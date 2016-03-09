@@ -41,7 +41,7 @@
 #include <mtd/jffs2-user.h>
 
 #define PROGRAM "flash_eraseall"
-#define VERSION "$Revision: 1.22 $"
+#define VERSION "$Revision: 1.1.1.1 $"
 
 static const char *exe_name;
 static const char *mtd_device;
@@ -126,11 +126,11 @@ int main (int argc, char *argv[])
 
 	for (erase.start = 0; erase.start < meminfo.size; erase.start += meminfo.erasesize) {
 		if (bbtest) {
-			loff_t offset = erase.start;
+			unsigned long long offset = erase.start;
 			int ret = ioctl(fd, MEMGETBADBLOCK, &offset);
 			if (ret > 0) {
 				if (!quiet)
-					printf ("\nSkipping bad block at 0x%08x\n", erase.start);
+					printf ("\nSkipping bad block at 0x%09llx\n", erase.start);
 				continue;
 			} else if (ret < 0) {
 				if (errno == EOPNOTSUPP) {
@@ -148,10 +148,10 @@ int main (int argc, char *argv[])
 
 		if (!quiet) {
 			printf
-				("\rErasing %d Kibyte @ %x -- %2llu %% complete.",
+				("\rErasing %d Kibyte @ %llx -- %2u %% complete.",
 				 meminfo.erasesize / 1024, erase.start,
 				 (unsigned long long)
-				 erase.start * 100 / meminfo.size);
+				 (erase.start + meminfo.erasesize) * 100 / meminfo.size);
 		}
 		fflush(stdout);
 

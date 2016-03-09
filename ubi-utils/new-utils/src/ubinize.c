@@ -422,7 +422,8 @@ int main(int argc, char * const argv[])
 	struct ubigen_info ui;
 	struct ubi_vtbl_record *vtbl;
 	off_t seek;
-
+	int tmp;
+	
 	err = parse_opt(argc, argv);
 	if (err)
 		return -1;
@@ -527,7 +528,8 @@ int main(int argc, char * const argv[])
 		/*
 		 * Make sure the image size is not larger then the volume size.
 		 */
-		if (st.st_size > vi.bytes) {
+		tmp = (st.st_size / (ui.leb_size + sizeof(unsigned int))) * sizeof(unsigned int);
+		if (st.st_size - tmp> vi.bytes) {
 			errmsg("error in section \"%s\": size of the image file \"%s\" "
 			       "is %lld, which is larger then the volume size %lld",
 			       sname, img, (long long)st.st_size, vi.bytes);
@@ -543,7 +545,7 @@ int main(int argc, char * const argv[])
 		verbose(args.verbose, "writing volume %d", vi.id);
 		verbose(args.verbose, "image file: %s", img);
 
-		err = ubigen_write_volume(&ui, &vi, args.ec, st.st_size, fd, args.out_fd);
+		err = ubigen_write_volume(&ui, &vi, args.ec, st.st_size-tmp, fd, args.out_fd);
 		close(fd);
 		if (err) {
 			errmsg("cannot write volume for section \"%s\"", sname);

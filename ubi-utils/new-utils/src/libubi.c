@@ -971,6 +971,11 @@ int ubi_update_start(libubi_t desc, int fd, long long bytes)
 	return 0;
 }
 
+int ubi_leb_read_start(int fd,  struct ubi_leb *leb)
+{
+	return ioctl(fd, UBI_IOCLEBREAD, leb);
+}
+
 int ubi_leb_change_start(libubi_t desc, int fd, int lnum, int bytes, int dtype)
 {
 	struct ubi_leb_change_req req;

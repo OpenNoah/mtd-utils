@@ -31,8 +31,8 @@
 
   The files are opened in the current dir.
 
-  $Id: checkfs.c,v 1.8 2005/11/07 11:15:17 gleixner Exp $
-  $Log: checkfs.c,v $
+  $Id: checkfs.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $
+  $Log: not supported by cvs2svn $
   Revision 1.8  2005/11/07 11:15:17  gleixner
   [MTD / JFFS2] Clean up trailing white spaces
 

@@ -348,6 +348,19 @@ int ubi_get_vol_info1(libubi_t desc, int dev_num, int vol_id,
  */
 int ubi_update_start(libubi_t desc, int fd, long long bytes);
 
+
+/**
+ * ubi_leb_read_start 
+ * @fd: volume character devie file descriptor
+ * @leb: structure pointer for volume dump request
+ *
+ * This function call "UBI_IOCLEBREAD" ioctl. 
+ * return %1 means the LEB is not mapped, no need to dump
+ * return %0 LEB read done successful
+ * return any others error
+ */
+int ubi_leb_read_start(int fd,  struct ubi_leb *leb);
+
 /**
  * ubi_leb_change_start - start atomic LEB change.
  * @desc: UBI library descriptor

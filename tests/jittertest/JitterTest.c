@@ -20,8 +20,8 @@
  *
  *
  *  Revision History:
- *  $Id: JitterTest.c,v 1.13 2005/11/07 11:15:20 gleixner Exp $
- *  $Log: JitterTest.c,v $
+ *  $Id: JitterTest.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $
+ *  $Log: not supported by cvs2svn $
  *  Revision 1.13  2005/11/07 11:15:20  gleixner
  *  [MTD / JFFS2] Clean up trailing white spaces
  *
@@ -165,7 +165,7 @@ enum timerActions
 
 /************************** Module Variables **************************/
 /* version identifier (value supplied by CVS)*/
-static const char Version[] = "$Id: JitterTest.c,v 1.13 2005/11/07 11:15:20 gleixner Exp $";
+static const char Version[] = "$Id: JitterTest.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $";
 
 static char OutFileName[MAX_FILE_NAME_LEN+1];  /* output file name            */
 static char LogFile[MAX_FILE_NAME_LEN+1] = "/dev/console"; /* default */

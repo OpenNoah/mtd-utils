@@ -9,8 +9,8 @@
 
   (including none or non serial mode at all)
 
-  $Id: comm.c,v 1.3 2005/11/07 11:15:17 gleixner Exp $
-  $Log: comm.c,v $
+  $Id: comm.c,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $
+  $Log: not supported by cvs2svn $
   Revision 1.3  2005/11/07 11:15:17  gleixner
   [MTD / JFFS2] Clean up trailing white spaces
 

@@ -10,8 +10,8 @@
 /*--------------------------------------------------------------------------*/
 
 /*
-	$Id: iniparser.h,v 1.24 2007-11-23 21:38:19 ndevilla Exp $
-	$Revision: 1.24 $
+	$Id: libiniparser.h,v 1.1.1.1 2008-05-13 07:15:32 yrtan Exp $
+	$Revision: 1.1.1.1 $
 */
 
 #ifndef _INIPARSER_H_

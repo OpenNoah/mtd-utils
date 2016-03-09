@@ -169,10 +169,9 @@ int main(int argc, char **argv)
 {
 	unsigned long ofs, end_addr = 0;
 	unsigned long long blockstart = 1;
-	int ret, i, fd, ofd, bs, badblock = 0;
+	int ret, fd, ofd, bs, badblock = 0;
 	struct mtd_oob_buf oob = {0, 16, oobbuf};
 	mtd_info_t meminfo;
-	char pretty_buf[80];
 	int oobinfochanged = 0 ;
 	struct nand_oobinfo old_oobinfo;
 	struct mtd_ecc_stats stat1, stat2;
@@ -283,9 +282,9 @@ int main(int argc, char **argv)
 		}
 
 		if (badblock) {
-			if (omitbad)
-				continue;
-			memset (readbuf, 0xff, bs);
+			//skip bad block;
+			ofs += meminfo.erasesize - bs;
+			continue;		
 		} else {
 			/* Read page data and exit on failure */
 			if (pread(fd, readbuf, bs, ofs) != bs) {
@@ -311,31 +310,6 @@ int main(int argc, char **argv)
 			stat1 = stat2;
 		}
 
-		/* Write out page data */
-		if (pretty_print) {
-			for (i = 0; i < bs; i += 16) {
-				sprintf(pretty_buf,
-						"0x%08x: %02x %02x %02x %02x %02x %02x %02x "
-						"%02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
-						(unsigned int) (ofs + i),  readbuf[i],
-						readbuf[i+1], readbuf[i+2],
-						readbuf[i+3], readbuf[i+4],
-						readbuf[i+5], readbuf[i+6],
-						readbuf[i+7], readbuf[i+8],
-						readbuf[i+9], readbuf[i+10],
-						readbuf[i+11], readbuf[i+12],
-						readbuf[i+13], readbuf[i+14],
-						readbuf[i+15]);
-				write(ofd, pretty_buf, 60);
-			}
-		} else
-			write(ofd, readbuf, bs);
-
-
-
-		if (omitoob)
-			continue;
-
 		if (badblock) {
 			memset (readbuf, 0xff, meminfo.oobsize);
 		} else {
@@ -345,33 +319,21 @@ int main(int argc, char **argv)
 				perror("ioctl(MEMREADOOB)");
 				goto closeall;
 			}
+			if(oobbuf[2]==0xff && oobbuf[3]==0xff && oobbuf[4]==0xff && oobbuf[5]==0xff){
+				//skip free block;
+				ofs += meminfo.erasesize - bs;
+				continue;	
+			}
 		}
 
+		/* Write out page data */
+		write(ofd, readbuf, bs);
+		
+		if (omitoob)
+			continue;
+		
 		/* Write out OOB data */
-		if (pretty_print) {
-			if (meminfo.oobsize < 16) {
-				sprintf(pretty_buf, "  OOB Data: %02x %02x %02x %02x %02x %02x "
-						"%02x %02x\n",
-						oobbuf[0], oobbuf[1], oobbuf[2],
-						oobbuf[3], oobbuf[4], oobbuf[5],
-						oobbuf[6], oobbuf[7]);
-				write(ofd, pretty_buf, 48);
-				continue;
-			}
-
-			for (i = 0; i < meminfo.oobsize; i += 16) {
-				sprintf(pretty_buf, "  OOB Data: %02x %02x %02x %02x %02x %02x "
-						"%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
-						oobbuf[i], oobbuf[i+1], oobbuf[i+2],
-						oobbuf[i+3], oobbuf[i+4], oobbuf[i+5],
-						oobbuf[i+6], oobbuf[i+7], oobbuf[i+8],
-						oobbuf[i+9], oobbuf[i+10], oobbuf[i+11],
-						oobbuf[i+12], oobbuf[i+13], oobbuf[i+14],
-						oobbuf[i+15]);
-				write(ofd, pretty_buf, 60);
-			}
-		} else
-			write(ofd, oobbuf, meminfo.oobsize);
+		write(ofd, oobbuf, meminfo.oobsize);
 	}
 
 	/* reset oobinfo */

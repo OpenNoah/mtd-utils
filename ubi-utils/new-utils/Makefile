@@ -4,21 +4,24 @@
 
 OPTFLAGS := -O2 -Wall
 KERNELHDR := ../../include
-DESTDIR := /usr/local
+#DESTDIR := /usr/local
+DESTDIR := /nfsroot/user/yrtan
 SBINDIR=/usr/sbin
 MANDIR=/usr/man
 INCLUDEDIR=/usr/include
-
+CROSS=mipsel-linux-
 CC := $(CROSS)gcc
 CFLAGS := -Iinclude -Isrc -I$(KERNELHDR) $(OPTFLAGS) -Werror -Wall
 
 LIBS = libubi libmtd libubigen libiniparser libscan
 UTILS = ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo ubiattach \
-        ubidetach ubinize ubiformat
-
+        ubidetach ubiformat ubidumpvol ubicrcvol \
+	ubinize ubicrcsf ubirefimg
 vpath %.c src
 
 all: $(UTILS)
+	mkdir -p ./new-utils-dir
+	cp $(UTILS) ./new-utils-dir
 
 # The below cancels existing implicite rule to make programs from .c files,
 # in order to force make using our rule defined below
@@ -30,6 +33,12 @@ all: $(UTILS)
 
 # And the below is the rule to get final executable from its .o and common.o
 %: libubi.a %.o common.o
+	$(CC) $(CFLAGS) $(filter %.o, $^) -L. -lubi -o $@
+
+ubicrcsf: ubicrcsf.o crc32.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+ubicrcvol: ubicrcvol.o common.o crc32.o libubi.a
 	$(CC) $(CFLAGS) $(filter %.o, $^) -L. -lubi -o $@
 
 ubicrc32: ubicrc32.o crc32.o
@@ -63,6 +72,7 @@ libscan.a: libscan.o crc32.o
 
 clean:
 	rm -rf *.o $(addsuffix .a, $(LIBS)) $(UTILS) .*.c.dep
+	rm -rf new-utils-dir
 
 install: ${UTILS}
 	mkdir -p ${DESTDIR}/${SBINDIR}
