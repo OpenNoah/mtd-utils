@@ -38,7 +38,7 @@
 
 #define PROGRAM_VERSION "1.1"
 #define PROGRAM_NAME    "ubicrcsf"
-#define UBI_LEB_SIZE  258048
+#define UBI_LEB_SIZE  516096
 #define BUF_SIZE (UBI_LEB_SIZE + sizeof(unsigned int))
 
 /*
