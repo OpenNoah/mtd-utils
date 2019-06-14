@@ -13,6 +13,8 @@ CROSS=mipsel-linux-
 CC := $(CROSS)gcc
 CFLAGS := -I./inc -I./src -I$(KERNELHDR) $(OPTFLAGS) -Werror \
 	-Wwrite-strings -W -std=gnu99 -DPACKAGE_VERSION=\"1.0\"
+CFLAGS += -Wno-stringop-overflow -Wno-unused-but-set-variable
+CFLAGS += -Wno-implicit-fallthrough -Wno-sequence-point
 
 PERLPROGS = mkpfi ubicrc32.pl
 

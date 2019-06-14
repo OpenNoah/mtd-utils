@@ -12,6 +12,7 @@ INCLUDEDIR=/usr/include
 CROSS=mipsel-linux-
 CC := $(CROSS)gcc
 CFLAGS := -Iinclude -Isrc -I$(KERNELHDR) $(OPTFLAGS) -Werror -Wall
+CFLAGS += -Wno-memset-transposed-args -Wno-format-overflow
 
 LIBS = libubi libmtd libubigen libiniparser libscan
 UTILS = ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo ubiattach \

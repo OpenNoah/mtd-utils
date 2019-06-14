@@ -29,6 +29,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <limits.h>
 #include "libubi.h"
 #include "libubi_int.h"
