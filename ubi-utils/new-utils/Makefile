@@ -17,7 +17,7 @@ CFLAGS += -Wno-memset-transposed-args -Wno-format-overflow
 LIBS = libubi libmtd libubigen libiniparser libscan
 UTILS = ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo ubiattach \
         ubidetach ubiformat ubidumpvol ubicrcvol \
-	ubinize ubicrcsf ubirefimg
+	ubinize ubicrcsf ubirefimg unubirefimg
 vpath %.c src
 
 all: $(UTILS)
